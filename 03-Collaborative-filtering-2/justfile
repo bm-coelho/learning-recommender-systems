@@ -1,0 +1,42 @@
+# Define variables
+container_name := "my_jupyter_project_container"
+image_name := "my_jupyter_project"
+workspace := "/workspace"
+
+# Build the Docker image
+build:
+    docker build -t {{image_name}} .
+
+# Run the Docker container
+run:
+    docker run -it --rm \
+        --gpus all \
+        -p 127.0.0.1:8888:8888 \
+        -v $(pwd):/workspace \
+        --name my_jupyter_project_container \
+        my_jupyter_project
+
+
+# Run the Docker container in detached mode (background)
+run-detached:
+    docker run -d -p 8888:8888 -v $(pwd):{{workspace}} --name {{container_name}} {{image_name}}
+
+# Stop the running Docker container
+stop:
+    docker stop {{container_name}}
+
+# Copy Jupyter config from the container to the local machine
+copy-config:
+    docker cp {{container_name}}:/root/.jupyter/jupyter_notebook_config.py .
+
+# Attach VSCode to the running Docker container
+vscode-attach:
+    code --folder-uri vscode-remote://attached-container+{{container_name}}/workspace
+
+# Rebuild and run the container (shortcut)
+rebuild-run: build run
+
+# Clean up: stop the container if running and remove the image
+clean:
+    -docker stop {{container_name}}
+    -docker rmi {{image_name}}
